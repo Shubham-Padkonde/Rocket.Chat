@@ -45,7 +45,6 @@ const MonitorsTable = () => {
 
 	const dispatchToastMessage = useToastMessageDispatch();
 
-	const pagination = usePagination();
 	const sort = useSort<'name' | 'username' | 'email'>('name');
 
 	const getMonitors = useEndpoint('GET', '/v1/livechat/monitors');
@@ -53,7 +52,6 @@ const MonitorsTable = () => {
 	const deleteMonitor = useEndpoint('POST', '/v1/livechat/monitors.delete');
 	const addMonitor = useEndpoint('POST', '/v1/livechat/monitors.create');
 
-	const { current, itemsPerPage, setItemsPerPage: onSetItemsPerPage, setCurrent: onSetCurrent, ...paginationProps } = pagination;
 	const { sortBy, sortDirection, setSort } = sort;
 
 	const query = useDebouncedValue(
@@ -61,21 +59,29 @@ const MonitorsTable = () => {
 			() => ({
 				text,
 				sort: `{ "${sortBy}": ${sortDirection === 'asc' ? 1 : -1} }`,
-				...(itemsPerPage && { count: itemsPerPage }),
-				...(current && { offset: current }),
 			}),
-			[text, itemsPerPage, current, sortBy, sortDirection],
+			[text, sortBy, sortDirection],
 		),
 		500,
 	);
 
+	const {
+		paginatedQuery,
+		queryKey,
+		current,
+		itemsPerPage,
+		setItemsPerPage: onSetItemsPerPage,
+		setCurrent: onSetCurrent,
+		...paginationProps
+	} = usePagination({ query, getQueryKey: (query) => ['omnichannel', 'monitors', query] });
+
 	const { data, refetch, isLoading, isSuccess, isError } = useQuery({
-		queryKey: ['omnichannel', 'monitors', query],
-		queryFn: () => getMonitors(query),
+		queryKey,
+		queryFn: () => getMonitors(paginatedQuery),
 	});
 
-	const [defaultQuery] = useState(hashKey([query]));
-	const queryHasChanged = defaultQuery !== hashKey([query]);
+	const [defaultQuery] = useState(hashKey([paginatedQuery]));
+	const queryHasChanged = defaultQuery !== hashKey([paginatedQuery]);
 
 	const queryClient = useQueryClient();
 
@@ -186,7 +192,6 @@ const MonitorsTable = () => {
 						divider
 						current={current}
 						itemsPerPage={itemsPerPage}
-						count={data?.total || 0}
 						onSetItemsPerPage={onSetItemsPerPage}
 						onSetCurrent={onSetCurrent}
 						{...paginationProps}
