@@ -24,6 +24,7 @@ import {
 	GenericTableHeaderCell,
 	GenericTableLoadingTable,
 	GenericTableRow,
+	getCombineFn,
 	usePaginatedQuery,
 	usePagination,
 	useSort,
@@ -79,7 +80,7 @@ const MonitorsTable = () => {
 		query,
 		queryKey,
 		queryFn: getMonitors,
-		itemsKey: 'monitors',
+		combineData: getCombineFn('monitors'),
 		offset: current,
 		count: itemsPerPage,
 	});
